@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-deployment
+  labels:
+    app: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-password
+--- # yaml syntax for document separation
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service # whatever i want to call it
+spec:
+  selector:
+    app: mongodb # The deployment's label's app name! so it selects that container
+  ports:
+    - protocol: TCP
+      port: 27017 # see image documentation for default port for user to contact service
+      targetPort: 27017 # port for service to contact deployment; should match deployment's containerPort!
