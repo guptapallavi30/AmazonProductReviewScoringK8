@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-flask-app-deployment
+  labels:
+    app: custom-flask-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-flask-app
+  template:
+    metadata:
+      labels:
+        app: custom-flask-app
+    spec:
+      containers:
+      - name: custom-flask-app
+        image: guptapallavi30/model_app_k8:v1.0.1
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: model-data-volume
+          mountPath: /app/model_files
+      volumes:
+      - name: model-data-volume
+        persistentVolumeClaim:
+          claimName: model-data-pvc  # Replace with your PVC name
+
+        # env:
+        # - name: LOCAL_MODEL_FILES_PATH
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: flask-app-configmap
+        #       key: local_model_files_path
+        # - name: VOLUME_FILES_PATH
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: flask-app-configmap
+        #       key: volume_files_path
+        # - name: MODEL_XZ_FILE
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: flask-app-configmap
+        #       key: model_xz_file
+        # - name: TFIDF_FILE
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: flask-app-configmap
+        #       key: tfidf_file
+        # - name: TFIDF_ZIP
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: flask-app-configmap
+        #       key: tfidf_zip
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-flask-app-service
+spec:
+  selector:
+    app: custom-flask-app
+  type: LoadBalancer  # to make it an external service
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 5000
+      nodePort: 31000 # port for external IP address; must be between 30000 - 32767
