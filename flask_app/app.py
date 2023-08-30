@@ -11,6 +11,7 @@ import shutil
 import lzma
 import tempfile
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,13 +41,22 @@ vectorizer_zip_file = os.path.join(extracted_dir, tfidf_zip)
 
 print('done with file naming')
 
+client = MongoClient('mongodb://root:example@mongo:27017/')
+
+
 # Placeholder for the loaded model
 loaded_model = None
 tfidf_vectorizer = None
+db = None
 
 def create_model():
     global loaded_model
     global tfidf_vectorizer
+    global db
+
+    db = client.mydatabase
+    print('done loadiing db')
+    # print(db)
     
     # Copy the original compressed model file to the volume folder
     with open(original_model_compressed_file, 'rb') as src_file, \
@@ -120,6 +130,18 @@ def predict():
     except Exception as e:
         error_message = str(e)
         return render_template('error.html', error_message=error_message)
+
+# Add a route to insert an entry into MongoDB
+@app.route('/add_entry', methods=['POST'])
+def add_entry():
+    print('in add_entry')
+    try:
+        entry = {'name': 'John Doe', 'age': 30}  # Sample entry data
+        db.my_collection.insert_one(entry)
+        return jsonify({'message': 'Entry added to MongoDB'})
+    except Exception as e:
+        error_message = str(e)
+        return jsonify({'error': error_message})
 
 if __name__ == '__main__':
     app.run(debug=True)
